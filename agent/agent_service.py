@@ -81,6 +81,39 @@ class CausalAgent:
                 ),
             ]
         )
+        self._causal_pair_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "You are a helpful assistant for causal reasoning. "
+                    "You answer causal questions carefully, identify the more plausible "
+                    "direction of cause and effect, and separate evidence from assumptions. "
+                    "If RAG context is provided, use it as the primary source of evidence. "
+                    "If the context does not contain enough information, say so and rely on "
+                    "general causal reasoning. "
+                    "For A/B causal choice tasks, include a clear structural conclusion "
+                    "immediately before the final answer tag in this format: "
+                    "Conclusion: <cause> causes <effect>. "
+                    "End your response with exactly one final tag: "
+                    "<Answer>A</Answer> or <Answer>B</Answer>.",
+                ),
+                (
+                    "user",
+                    "Variable X:\n{x_name}\n\n"
+                    "Variable Y:\n{y_name}\n\n"
+                    "Description with ground-truth section removed:\n{description}\n\n"
+                    "Observational data summary:\n{data_summary}\n\n"
+                    "RAG context:\n{rag_context}\n\n"
+                    "Which cause-and-effect relationship is more likely?\n\n"
+                    "A. changing {x_name} causes a change in {y_name}.\n"
+                    "B. changing {y_name} causes a change in {x_name}.\n\n"
+                    "Let's work this out in a step by step way to be sure that "
+                    "we have the right answer. Then write a separate line in the format "
+                    "Conclusion: <cause> causes <effect>. "
+                    "Finally, provide your final answer within the tags <Answer>A/B</Answer>.",
+                ),
+            ]
+        )
 
     def ask(
         self,
@@ -114,6 +147,68 @@ class CausalAgent:
         )
         logger.info(
             "LLM answer generated: model={}, json_mode={}, rag_chunks={}",
+            self.model_name,
+            used_json,
+            len(rag_chunks),
+        )
+        return AgentAnswer(
+            answer=str(content).strip(),
+            used_rag=use_rag,
+            rag_chunks=rag_chunks,
+        )
+
+    def ask_causal_pair(
+        self,
+        *,
+        x_name: str,
+        y_name: str,
+        description: str,
+        data_summary: str,
+        use_rag: bool = False,
+        rag_top_k: int = 3,
+    ) -> AgentAnswer:
+        x_name = x_name.strip()
+        y_name = y_name.strip()
+        description = description.strip()
+        data_summary = data_summary.strip()
+
+        if not x_name or not y_name:
+            raise ValueError("Empty variable name.")
+
+        retrieval_query = "\n\n".join(
+            part
+            for part in (
+                f"Variable X: {x_name}",
+                f"Variable Y: {y_name}",
+                description,
+            )
+            if part.strip()
+        )
+
+        rag_chunks: list[str] = []
+        if use_rag:
+            logger.info("RAG enabled for causal pair query: {}", retrieval_query)
+            rag_chunks = RAG().perform_query(retrieval_query, top_k=rag_top_k)
+
+        rag_context = "\n\n---\n\n".join(rag_chunks) if rag_chunks else "Not provided."
+        messages = self._causal_pair_prompt.format_messages(
+            x_name=x_name,
+            y_name=y_name,
+            description=description or "Not provided.",
+            data_summary=data_summary or "Not provided.",
+            rag_context=rag_context,
+        )
+
+        content, _, used_json = invoke_with_fallback(
+            messages,
+            model=self.model_name,
+            temperature=self.temperature,
+            api_key=self.api_key,
+            seed=self.seed,
+            top_p=self.top_p,
+        )
+        logger.info(
+            "LLM causal-pair answer generated: model={}, json_mode={}, rag_chunks={}",
             self.model_name,
             used_json,
             len(rag_chunks),

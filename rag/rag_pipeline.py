@@ -10,6 +10,8 @@ import os
 import json
 import math
 import re
+import shutil
+import tempfile
 import uuid
 import numpy as np
 import pandas as pd
@@ -160,7 +162,7 @@ class RAG:
         index.add(embs)
 
         self._ensure_parent_dir(self.cfg.faiss_index_path)
-        faiss.write_index(index, str(self.cfg.faiss_index_path))
+        self._write_faiss_index(index, self.cfg.faiss_index_path)
 
     def perform_query(self, query: str, top_k: int = 5) -> List[str]:
         """
@@ -178,7 +180,7 @@ class RAG:
         ).exists(), "chunks.parquet не найден. Сначала запусти build_chunks()."
 
         # Грузим индекс и данные для сопоставления
-        index = faiss.read_index(str(self.cfg.faiss_index_path))
+        index = self._read_faiss_index(self.cfg.faiss_index_path)
         emb_df = pd.read_parquet(
             self.cfg.embeddings_path
         )  # порядок соответствует индексу
@@ -355,6 +357,46 @@ class RAG:
     @staticmethod
     def _ensure_parent_dir(path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def _write_faiss_index(index, path: Path) -> None:
+        """
+        Write a FAISS index safely on Windows.
+
+        FAISS uses a native C++ file writer that can fail on paths containing
+        non-ASCII characters, for example project directories with Cyrillic
+        names. Write to a temporary ASCII-safe path first, then move the file
+        with Python, which handles Unicode paths correctly on Windows.
+        """
+        assert faiss is not None
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            faiss.write_index(index, str(path))
+            return
+        except RuntimeError:
+            with tempfile.TemporaryDirectory(prefix="faiss_index_") as tmp_dir:
+                tmp_path = Path(tmp_dir) / "index.faiss"
+                faiss.write_index(index, str(tmp_path))
+                shutil.move(str(tmp_path), str(path))
+
+    @staticmethod
+    def _read_faiss_index(path: Path):
+        """
+        Read a FAISS index safely on Windows when the project path contains
+        non-ASCII characters.
+        """
+        assert faiss is not None
+        path = Path(path)
+
+        try:
+            return faiss.read_index(str(path))
+        except RuntimeError:
+            with tempfile.TemporaryDirectory(prefix="faiss_index_") as tmp_dir:
+                tmp_path = Path(tmp_dir) / "index.faiss"
+                shutil.copy2(path, tmp_path)
+                return faiss.read_index(str(tmp_path))
 
 
 def clean_txt(text: str) -> str:
