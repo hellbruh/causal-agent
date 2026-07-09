@@ -12,6 +12,7 @@ __pycache__/
 artifacts/
 rag_data/
 reports/
+data/
 
 # --- Virtualenv ---
 venv/
