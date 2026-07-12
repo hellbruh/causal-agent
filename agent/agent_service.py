@@ -101,7 +101,7 @@ class CausalAgent:
                     "user",
                     "Variable X:\n{x_name}\n\n"
                     "Variable Y:\n{y_name}\n\n"
-                    "Description with ground-truth section removed:\n{description}\n\n"
+                    "Description:\n{description}\n\n"
                     "Observational data summary:\n{data_summary}\n\n"
                     "RAG context:\n{rag_context}\n\n"
                     "Which cause-and-effect relationship is more likely?\n\n"
