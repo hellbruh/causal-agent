@@ -19,12 +19,12 @@ def _supports_sampling_params(model_name: str) -> bool:
 def _recommendation_instruction(use_recommendation: bool) -> str:
     if use_recommendation:
         return (
-            "Add a separate Recommendations section with 3-5 actionable "
-            "recommendations based on the causal conclusion and available RAG "
-            "context. When RAG context is not sufficient, clearly mark "
-            "recommendations as inference."
+            "Добавь отдельный раздел «Рекомендации» с 3-5 практическими "
+            "рекомендациями на основе причинно-следственного вывода и доступного "
+            "RAG-контекста. Если RAG-контекста недостаточно, явно отметь, что "
+            "рекомендации являются выводом модели, а не фактом из источников."
         )
-    return "Do not include a Recommendations section."
+    return "Не добавляй раздел «Рекомендации»."
 
 
 @dataclass
@@ -68,34 +68,39 @@ class CausalAgent:
             [
                 (
                     "system",
-                    "You are a helpful assistant for causal reasoning. "
-                    "You answer causal questions carefully, identify the more plausible "
-                    "direction of cause and effect, and separate evidence from assumptions. "
-                    "If RAG context is provided, use it as the primary source of evidence. "
-                    "If the context does not contain enough information, say so and rely on "
-                    "general causal reasoning. "
-                    "Follow the recommendation instruction provided by the user. "
-                    "Always include a separate line with self-assessed model confidence "
-                    "in this format: Confidence: <0-100>% - <brief calibration reason>. "
-                    "For A/B causal choice tasks, include a clear structural conclusion "
-                    "immediately before the final answer tag in this format: "
-                    "Conclusion: <cause> causes <effect>. "
-                    "For A/B causal choice tasks, end your response with exactly one final tag: "
-                    "<Answer>A</Answer> or <Answer>B</Answer>.",
+                    "Ты помощник для причинно-следственного анализа. "
+                    "Отвечай на русском языке. Не галлюцинируй: не выдумывай "
+                    "факты, источники, числа или причинные механизмы, которых нет "
+                    "в вопросе, данных или RAG-контексте. "
+                    "Аккуратно отвечай на вопросы о причинности, определяй более "
+                    "правдоподобное направление причины и следствия, отделяй "
+                    "доказательства от предположений. "
+                    "Если предоставлен RAG-контекст, используй его как основной "
+                    "источник доказательств. Если в контексте недостаточно "
+                    "информации, прямо скажи об этом и опирайся на общие "
+                    "причинно-следственные рассуждения. "
+                    "Следуй инструкции по рекомендациям, указанной пользователем. "
+                    "Всегда добавляй отдельную строку с самооценкой уверенности "
+                    "модели в формате: Уверенность: <0-100>% - <краткая причина>. "
+                    "Для задач выбора A/B добавляй ясный структурный вывод "
+                    "непосредственно перед финальным тегом ответа в формате: "
+                    "Вывод: <причина> вызывает <следствие>. "
+                    "Для задач выбора A/B заканчивай ответ ровно одним финальным "
+                    "тегом: <Answer>A</Answer> или <Answer>B</Answer>.",
                 ),
                 (
                     "user",
-                    "Question:\n{question}\n\n"
-                    "RAG context:\n{rag_context}\n\n"
-                    "Recommendation instruction:\n{recommendation_instruction}\n\n"
-                    "Which cause-and-effect relationship is more likely?\n\n"
-                    "If the question provides options A and B, compare those two options. "
-                    "Let's work this out in a step by step way to be sure that we have "
-                    "the right answer. Then follow the recommendation instruction. "
-                    "Then write a separate Confidence line. "
-                    "Then write a separate line in the format "
-                    "Conclusion: <cause> causes <effect>. "
-                    "Finally, provide your final answer within the tags <Answer>A/B</Answer>.",
+                    "Вопрос:\n{question}\n\n"
+                    "RAG-контекст:\n{rag_context}\n\n"
+                    "Инструкция по рекомендациям:\n{recommendation_instruction}\n\n"
+                    "Какая причинно-следственная связь более вероятна?\n\n"
+                    "Если в вопросе есть варианты A и B, сравни именно эти два "
+                    "варианта. Дай краткое пошаговое обоснование, чтобы проверить "
+                    "выбор направления причинности. Затем выполни инструкцию по "
+                    "рекомендациям. Затем напиши отдельную строку «Уверенность». "
+                    "Затем напиши отдельную строку в формате "
+                    "Вывод: <причина> вызывает <следствие>. "
+                    "В конце дай финальный ответ в тегах <Answer>A/B</Answer>.",
                 ),
             ]
         )
@@ -103,38 +108,43 @@ class CausalAgent:
             [
                 (
                     "system",
-                    "You are a helpful assistant for causal reasoning. "
-                    "You answer causal questions carefully, identify the more plausible "
-                    "direction of cause and effect, and separate evidence from assumptions. "
-                    "If RAG context is provided, use it as the primary source of evidence. "
-                    "If the context does not contain enough information, say so and rely on "
-                    "general causal reasoning. "
-                    "Follow the recommendation instruction provided by the user. "
-                    "Always include a separate line with self-assessed model confidence "
-                    "in this format: Confidence: <0-100>% - <brief calibration reason>. "
-                    "For A/B causal choice tasks, include a clear structural conclusion "
-                    "immediately before the final answer tag in this format: "
-                    "Conclusion: <cause> causes <effect>. "
-                    "End your response with exactly one final tag: "
-                    "<Answer>A</Answer> or <Answer>B</Answer>.",
+                    "Ты помощник для причинно-следственного анализа. "
+                    "Отвечай на русском языке. Не галлюцинируй: не выдумывай "
+                    "факты, источники, числа или причинные механизмы, которых нет "
+                    "в вопросе, данных или RAG-контексте. "
+                    "Аккуратно отвечай на вопросы о причинности, определяй более "
+                    "правдоподобное направление причины и следствия, отделяй "
+                    "доказательства от предположений. "
+                    "Если предоставлен RAG-контекст, используй его как основной "
+                    "источник доказательств. Если в контексте недостаточно "
+                    "информации, прямо скажи об этом и опирайся на общие "
+                    "причинно-следственные рассуждения. "
+                    "Следуй инструкции по рекомендациям, указанной пользователем. "
+                    "Всегда добавляй отдельную строку с самооценкой уверенности "
+                    "модели в формате: Уверенность: <0-100>% - <краткая причина>. "
+                    "Для задач выбора A/B добавляй ясный структурный вывод "
+                    "непосредственно перед финальным тегом ответа в формате: "
+                    "Вывод: <причина> вызывает <следствие>. "
+                    "Заканчивай ответ ровно одним финальным тегом: "
+                    "<Answer>A</Answer> или <Answer>B</Answer>.",
                 ),
                 (
                     "user",
-                    "Variable X:\n{x_name}\n\n"
-                    "Variable Y:\n{y_name}\n\n"
-                    "Description:\n{description}\n\n"
-                    "Observational data summary:\n{data_summary}\n\n"
-                    "RAG context:\n{rag_context}\n\n"
-                    "Recommendation instruction:\n{recommendation_instruction}\n\n"
-                    "Which cause-and-effect relationship is more likely?\n\n"
-                    "A. changing {x_name} causes a change in {y_name}.\n"
-                    "B. changing {y_name} causes a change in {x_name}.\n\n"
-                    "Let's work this out in a step by step way to be sure that "
-                    "we have the right answer. Then follow the recommendation instruction. "
-                    "Then write a separate Confidence line. "
-                    "Then write a separate line in the format "
-                    "Conclusion: <cause> causes <effect>. "
-                    "Finally, provide your final answer within the tags <Answer>A/B</Answer>.",
+                    "Переменная X:\n{x_name}\n\n"
+                    "Переменная Y:\n{y_name}\n\n"
+                    "Описание:\n{description}\n\n"
+                    "Сводка наблюдательных данных:\n{data_summary}\n\n"
+                    "RAG-контекст:\n{rag_context}\n\n"
+                    "Инструкция по рекомендациям:\n{recommendation_instruction}\n\n"
+                    "Какая причинно-следственная связь более вероятна?\n\n"
+                    "A. изменение {x_name} вызывает изменение {y_name}.\n"
+                    "B. изменение {y_name} вызывает изменение {x_name}.\n\n"
+                    "Дай краткое пошаговое обоснование, чтобы проверить выбор "
+                    "направления причинности. Затем выполни инструкцию по "
+                    "рекомендациям. Затем напиши отдельную строку «Уверенность». "
+                    "Затем напиши отдельную строку в формате "
+                    "Вывод: <причина> вызывает <следствие>. "
+                    "В конце дай финальный ответ в тегах <Answer>A/B</Answer>.",
                 ),
             ]
         )
@@ -156,7 +166,7 @@ class CausalAgent:
             logger.info("RAG enabled for query: {}", question)
             rag_chunks = RAG().perform_query(question, top_k=rag_top_k)
 
-        rag_context = "\n\n---\n\n".join(rag_chunks) if rag_chunks else "Not provided."
+        rag_context = "\n\n---\n\n".join(rag_chunks) if rag_chunks else "Не предоставлен."
         messages = self._prompt.format_messages(
             question=question,
             rag_context=rag_context,
@@ -206,8 +216,8 @@ class CausalAgent:
         retrieval_query = "\n\n".join(
             part
             for part in (
-                f"Variable X: {x_name}",
-                f"Variable Y: {y_name}",
+                f"Переменная X: {x_name}",
+                f"Переменная Y: {y_name}",
                 description,
             )
             if part.strip()
@@ -218,12 +228,12 @@ class CausalAgent:
             logger.info("RAG enabled for causal pair query: {}", retrieval_query)
             rag_chunks = RAG().perform_query(retrieval_query, top_k=rag_top_k)
 
-        rag_context = "\n\n---\n\n".join(rag_chunks) if rag_chunks else "Not provided."
+        rag_context = "\n\n---\n\n".join(rag_chunks) if rag_chunks else "Не предоставлен."
         messages = self._causal_pair_prompt.format_messages(
             x_name=x_name,
             y_name=y_name,
-            description=description or "Not provided.",
-            data_summary=data_summary or "Not provided.",
+            description=description or "Не предоставлено.",
+            data_summary=data_summary or "Не предоставлена.",
             rag_context=rag_context,
             recommendation_instruction=_recommendation_instruction(use_recommendation),
         )
