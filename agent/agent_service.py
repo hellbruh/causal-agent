@@ -16,12 +16,24 @@ def _supports_sampling_params(model_name: str) -> bool:
     return not model_name.lower().startswith("openai/gpt-5")
 
 
+def _recommendation_instruction(use_recommendation: bool) -> str:
+    if use_recommendation:
+        return (
+            "Add a separate Recommendations section with 3-5 actionable "
+            "recommendations based on the causal conclusion and available RAG "
+            "context. When RAG context is not sufficient, clearly mark "
+            "recommendations as inference."
+        )
+    return "Do not include a Recommendations section."
+
+
 @dataclass
 class AgentAnswer:
     """Result returned by CausalAgent."""
 
     answer: str
     used_rag: bool = False
+    used_recommendation: bool = True
     rag_chunks: list[str] = field(default_factory=list)
 
 
@@ -62,6 +74,9 @@ class CausalAgent:
                     "If RAG context is provided, use it as the primary source of evidence. "
                     "If the context does not contain enough information, say so and rely on "
                     "general causal reasoning. "
+                    "Follow the recommendation instruction provided by the user. "
+                    "Always include a separate line with self-assessed model confidence "
+                    "in this format: Confidence: <0-100>% - <brief calibration reason>. "
                     "For A/B causal choice tasks, include a clear structural conclusion "
                     "immediately before the final answer tag in this format: "
                     "Conclusion: <cause> causes <effect>. "
@@ -72,10 +87,13 @@ class CausalAgent:
                     "user",
                     "Question:\n{question}\n\n"
                     "RAG context:\n{rag_context}\n\n"
+                    "Recommendation instruction:\n{recommendation_instruction}\n\n"
                     "Which cause-and-effect relationship is more likely?\n\n"
                     "If the question provides options A and B, compare those two options. "
                     "Let's work this out in a step by step way to be sure that we have "
-                    "the right answer. Then write a separate line in the format "
+                    "the right answer. Then follow the recommendation instruction. "
+                    "Then write a separate Confidence line. "
+                    "Then write a separate line in the format "
                     "Conclusion: <cause> causes <effect>. "
                     "Finally, provide your final answer within the tags <Answer>A/B</Answer>.",
                 ),
@@ -91,6 +109,9 @@ class CausalAgent:
                     "If RAG context is provided, use it as the primary source of evidence. "
                     "If the context does not contain enough information, say so and rely on "
                     "general causal reasoning. "
+                    "Follow the recommendation instruction provided by the user. "
+                    "Always include a separate line with self-assessed model confidence "
+                    "in this format: Confidence: <0-100>% - <brief calibration reason>. "
                     "For A/B causal choice tasks, include a clear structural conclusion "
                     "immediately before the final answer tag in this format: "
                     "Conclusion: <cause> causes <effect>. "
@@ -104,11 +125,14 @@ class CausalAgent:
                     "Description:\n{description}\n\n"
                     "Observational data summary:\n{data_summary}\n\n"
                     "RAG context:\n{rag_context}\n\n"
+                    "Recommendation instruction:\n{recommendation_instruction}\n\n"
                     "Which cause-and-effect relationship is more likely?\n\n"
                     "A. changing {x_name} causes a change in {y_name}.\n"
                     "B. changing {y_name} causes a change in {x_name}.\n\n"
                     "Let's work this out in a step by step way to be sure that "
-                    "we have the right answer. Then write a separate line in the format "
+                    "we have the right answer. Then follow the recommendation instruction. "
+                    "Then write a separate Confidence line. "
+                    "Then write a separate line in the format "
                     "Conclusion: <cause> causes <effect>. "
                     "Finally, provide your final answer within the tags <Answer>A/B</Answer>.",
                 ),
@@ -121,6 +145,7 @@ class CausalAgent:
         *,
         use_rag: bool = False,
         rag_top_k: int = 3,
+        use_recommendation: bool = True,
     ) -> AgentAnswer:
         question = question.strip()
         if not question:
@@ -135,6 +160,7 @@ class CausalAgent:
         messages = self._prompt.format_messages(
             question=question,
             rag_context=rag_context,
+            recommendation_instruction=_recommendation_instruction(use_recommendation),
         )
 
         content, _, used_json = invoke_with_fallback(
@@ -154,6 +180,7 @@ class CausalAgent:
         return AgentAnswer(
             answer=str(content).strip(),
             used_rag=use_rag,
+            used_recommendation=use_recommendation,
             rag_chunks=rag_chunks,
         )
 
@@ -166,6 +193,7 @@ class CausalAgent:
         data_summary: str,
         use_rag: bool = False,
         rag_top_k: int = 3,
+        use_recommendation: bool = True,
     ) -> AgentAnswer:
         x_name = x_name.strip()
         y_name = y_name.strip()
@@ -197,6 +225,7 @@ class CausalAgent:
             description=description or "Not provided.",
             data_summary=data_summary or "Not provided.",
             rag_context=rag_context,
+            recommendation_instruction=_recommendation_instruction(use_recommendation),
         )
 
         content, _, used_json = invoke_with_fallback(
@@ -216,5 +245,6 @@ class CausalAgent:
         return AgentAnswer(
             answer=str(content).strip(),
             used_rag=use_rag,
+            used_recommendation=use_recommendation,
             rag_chunks=rag_chunks,
         )

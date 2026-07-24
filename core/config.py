@@ -98,7 +98,7 @@ class LoggingConfig(BaseSettings):
 
 
 class StreamlitConfig(BaseSettings):
-    page_title: str = "LLM + RAG"
+    page_title: str = "Causal Analysis + Recommendations"
     page_icon: str = "💬"
     layout: str = "wide"
 

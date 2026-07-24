@@ -209,6 +209,7 @@ def ask_agent_with_retry(
     *,
     use_rag: bool,
     rag_top_k: int,
+    use_recommendation: bool,
 ) -> str:
     last_error: Exception | None = None
 
@@ -221,6 +222,7 @@ def ask_agent_with_retry(
                 data_summary=payload.data_summary,
                 use_rag=use_rag,
                 rag_top_k=rag_top_k,
+                use_recommendation=use_recommendation,
             )
             if REQUEST_SLEEP_SECONDS > 0:
                 time.sleep(REQUEST_SLEEP_SECONDS)
@@ -255,6 +257,11 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--rag", action="store_true", help="Enable agent RAG")
     parser.add_argument("--rag-top-k", type=int, default=3)
+    parser.add_argument(
+        "--no-recommendations",
+        action="store_true",
+        help="Disable recommendation generation in agent responses",
+    )
     parser.add_argument("--no-resume", action="store_true")
     parser.add_argument("--stop-on-error", action="store_true")
     parser.add_argument(
@@ -337,6 +344,7 @@ def main() -> int:
                         payload,
                         use_rag=args.rag,
                         rag_top_k=args.rag_top_k,
+                        use_recommendation=not args.no_recommendations,
                     )
                     parsed = parse_answer(answer_text)
 
