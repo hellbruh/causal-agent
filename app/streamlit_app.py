@@ -26,7 +26,7 @@ st.set_page_config(
     layout=cfg.streamlit.layout,
 )
 
-st.title("Causal Analysis + Recommendations")
+st.title("Causal Analysis")
 
 
 def ensure_api_key() -> bool:
@@ -69,7 +69,6 @@ question = st.text_area(
     placeholder="Например: какие риски есть при запуске нового продукта?",
 )
 use_rag = st.checkbox("Использовать RAG", value=False)
-use_recommendation = st.checkbox("Получить рекомендации", value=True)
 submit = st.button("Отправить", type="primary")
 
 if submit:
@@ -88,7 +87,6 @@ if submit:
                 cleaned_question,
                 use_rag=use_rag,
                 rag_top_k=int(rag_top_k),
-                use_recommendation=use_recommendation,
             )
 
         st.markdown("### Ответ")

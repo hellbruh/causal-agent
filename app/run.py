@@ -19,11 +19,6 @@ def main() -> int:
     parser.add_argument("question", nargs="*", help="Question for the LLM agent")
     parser.add_argument("--use-rag", action="store_true", help="Use RAG context")
     parser.add_argument("--rag-top-k", type=int, default=3, help="Number of RAG chunks")
-    parser.add_argument(
-        "--no-recommendations",
-        action="store_true",
-        help="Disable recommendation generation",
-    )
     args = parser.parse_args()
 
     cfg = get_config()
@@ -51,7 +46,6 @@ def main() -> int:
         question,
         use_rag=args.use_rag,
         rag_top_k=args.rag_top_k,
-        use_recommendation=not args.no_recommendations,
     )
 
     print("\nОтвет:\n")

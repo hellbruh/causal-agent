@@ -16,24 +16,12 @@ def _supports_sampling_params(model_name: str) -> bool:
     return not model_name.lower().startswith("openai/gpt-5")
 
 
-def _recommendation_instruction(use_recommendation: bool) -> str:
-    if use_recommendation:
-        return (
-            "Добавь отдельный раздел «Рекомендации» с 3-5 практическими "
-            "рекомендациями на основе причинно-следственного вывода и доступного "
-            "RAG-контекста. Если RAG-контекста недостаточно, явно отметь, что "
-            "рекомендации являются выводом модели, а не фактом из источников."
-        )
-    return "Не добавляй раздел «Рекомендации»."
-
-
 @dataclass
 class AgentAnswer:
     """Result returned by CausalAgent."""
 
     answer: str
     used_rag: bool = False
-    used_recommendation: bool = True
     rag_chunks: list[str] = field(default_factory=list)
 
 
@@ -79,7 +67,6 @@ class CausalAgent:
                     "источник доказательств. Если в контексте недостаточно "
                     "информации, прямо скажи об этом и опирайся на общие "
                     "причинно-следственные рассуждения. "
-                    "Следуй инструкции по рекомендациям, указанной пользователем. "
                     "Всегда добавляй отдельную строку с самооценкой уверенности "
                     "модели в формате: Уверенность: <0-100>% - <краткая причина>. "
                     "Для задач выбора A/B добавляй ясный структурный вывод "
@@ -92,12 +79,10 @@ class CausalAgent:
                     "user",
                     "Вопрос:\n{question}\n\n"
                     "RAG-контекст:\n{rag_context}\n\n"
-                    "Инструкция по рекомендациям:\n{recommendation_instruction}\n\n"
                     "Какая причинно-следственная связь более вероятна?\n\n"
                     "Если в вопросе есть варианты A и B, сравни именно эти два "
                     "варианта. Дай краткое пошаговое обоснование, чтобы проверить "
-                    "выбор направления причинности. Затем выполни инструкцию по "
-                    "рекомендациям. Затем напиши отдельную строку «Уверенность». "
+                    "выбор направления причинности. Затем напиши отдельную строку «Уверенность». "
                     "Затем напиши отдельную строку в формате "
                     "Вывод: <причина> вызывает <следствие>. "
                     "В конце дай финальный ответ в тегах <Answer>A/B</Answer>.",
@@ -119,7 +104,6 @@ class CausalAgent:
                     "источник доказательств. Если в контексте недостаточно "
                     "информации, прямо скажи об этом и опирайся на общие "
                     "причинно-следственные рассуждения. "
-                    "Следуй инструкции по рекомендациям, указанной пользователем. "
                     "Всегда добавляй отдельную строку с самооценкой уверенности "
                     "модели в формате: Уверенность: <0-100>% - <краткая причина>. "
                     "Для задач выбора A/B добавляй ясный структурный вывод "
@@ -135,13 +119,11 @@ class CausalAgent:
                     "Описание:\n{description}\n\n"
                     "Сводка наблюдательных данных:\n{data_summary}\n\n"
                     "RAG-контекст:\n{rag_context}\n\n"
-                    "Инструкция по рекомендациям:\n{recommendation_instruction}\n\n"
                     "Какая причинно-следственная связь более вероятна?\n\n"
                     "A. изменение {x_name} вызывает изменение {y_name}.\n"
                     "B. изменение {y_name} вызывает изменение {x_name}.\n\n"
                     "Дай краткое пошаговое обоснование, чтобы проверить выбор "
-                    "направления причинности. Затем выполни инструкцию по "
-                    "рекомендациям. Затем напиши отдельную строку «Уверенность». "
+                    "направления причинности. Затем напиши отдельную строку «Уверенность». "
                     "Затем напиши отдельную строку в формате "
                     "Вывод: <причина> вызывает <следствие>. "
                     "В конце дай финальный ответ в тегах <Answer>A/B</Answer>.",
@@ -155,7 +137,6 @@ class CausalAgent:
         *,
         use_rag: bool = False,
         rag_top_k: int = 3,
-        use_recommendation: bool = True,
     ) -> AgentAnswer:
         question = question.strip()
         if not question:
@@ -170,7 +151,6 @@ class CausalAgent:
         messages = self._prompt.format_messages(
             question=question,
             rag_context=rag_context,
-            recommendation_instruction=_recommendation_instruction(use_recommendation),
         )
 
         content, _, used_json = invoke_with_fallback(
@@ -190,7 +170,6 @@ class CausalAgent:
         return AgentAnswer(
             answer=str(content).strip(),
             used_rag=use_rag,
-            used_recommendation=use_recommendation,
             rag_chunks=rag_chunks,
         )
 
@@ -203,7 +182,6 @@ class CausalAgent:
         data_summary: str,
         use_rag: bool = False,
         rag_top_k: int = 3,
-        use_recommendation: bool = True,
     ) -> AgentAnswer:
         x_name = x_name.strip()
         y_name = y_name.strip()
@@ -235,7 +213,6 @@ class CausalAgent:
             description=description or "Не предоставлено.",
             data_summary=data_summary or "Не предоставлена.",
             rag_context=rag_context,
-            recommendation_instruction=_recommendation_instruction(use_recommendation),
         )
 
         content, _, used_json = invoke_with_fallback(
@@ -255,6 +232,5 @@ class CausalAgent:
         return AgentAnswer(
             answer=str(content).strip(),
             used_rag=use_rag,
-            used_recommendation=use_recommendation,
             rag_chunks=rag_chunks,
         )
