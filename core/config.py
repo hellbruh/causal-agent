@@ -21,7 +21,7 @@ class PathsConfig(BaseSettings):
     artifacts_dir: Path = Field(default_factory=lambda: _project_root() / "artifacts")
     rag_data_dir: Path = Field(default_factory=lambda: _project_root() / "rag_data")
     document_corpus_dir: Path = Field(
-        default_factory=lambda: _project_root() / "rag_data" / "document_corpus"
+        default_factory=lambda: _project_root() / "rag_data" / "document_corpus_financial"
     )
     raw_documents_dir: Path = Field(
         default_factory=lambda: _project_root() / "rag_data" / "raw_documents"
